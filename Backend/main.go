@@ -3,18 +3,33 @@ package main
 import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
+	"go-app/handler"
 	"net/http"
 )
 
 func main() {
 
 	r := chi.NewRouter()
+	// Basic CORS
+	// for more ideas, see: https://developer.github.com/v3/#cross-origin-resource-sharing
+	r.Use(cors.Handler(cors.Options{
+		// AllowedOrigins:   []string{"https://foo.com"}, // Use this to allow specific origin hosts
+		AllowedOrigins: []string{"https://*", "http://*"},
+		// AllowOriginFunc:  func(r *http.Request, origin string) bool { return true },
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: false,
+		MaxAge:           300, // Maximum value not ignored by any of major browsers
+	}))
 	// log all requests
 	r.Use(middleware.Logger)
 	// recover from panics without crashing server
 	r.Use(middleware.Recoverer)
 	// set content type to json
 	r.Use(middleware.SetHeader("Content-Type", "application/json"))
-
-	http.ListenAndServe(":8080", r)
+	r.Get("/books?title={title}", handler.SearchBooksHandler)
+	r.Get("/books", handler.GetBooksHandler)
+	http.ListenAndServe(":8081", r)
 }
